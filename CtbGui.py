@@ -29,7 +29,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         #For DACs tab
         #TODO Only add the components of DACs tab
-        for i in range(18):
+        n_dacs = len(self.det.daclist)
+        for i in range(n_dacs):
             getattr(self, f'spinBoxDAC{i}').editingFinished.connect(partial(self.setDAC, i))
             getattr(self, f'checkBoxDAC{i}').clicked.connect(partial(self.setDAC, i))
             getattr(self, f'checkBoxDAC{i}mV').clicked.connect(partial(self.setDAC, i))
