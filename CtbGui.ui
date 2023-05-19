@@ -28,7 +28,7 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>1464</width>
+         <width>1463</width>
          <height>918</height>
         </rect>
        </property>
@@ -69,7 +69,7 @@
               </size>
              </property>
              <property name="currentIndex">
-              <number>6</number>
+              <number>2</number>
              </property>
              <widget class="QWidget" name="tab">
               <attribute name="title">
@@ -1278,6 +1278,34 @@
                  <string>V</string>
                 </property>
                </widget>
+               <widget class="QPushButton" name="pushButtonDACsUpdate">
+                <property name="geometry">
+                 <rect>
+                  <x>600</x>
+                  <y>10</y>
+                  <width>101</width>
+                  <height>31</height>
+                 </rect>
+                </property>
+                <property name="font">
+                 <font>
+                  <family>Cantarell</family>
+                 </font>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: rgb(199, 213, 207);</string>
+                </property>
+                <property name="text">
+                 <string>Update</string>
+                </property>
+                <property name="icon">
+                 <iconset theme="update">
+                  <normaloff>../../../../.designer</normaloff>../../../../.designer</iconset>
+                </property>
+                <property name="flat">
+                 <bool>false</bool>
+                </property>
+               </widget>
               </widget>
              </widget>
              <widget class="QWidget" name="tab_2">
@@ -1596,6 +1624,34 @@
                  <string>VCHIP</string>
                 </property>
                </widget>
+               <widget class="QPushButton" name="pushButtonPsUpdate">
+                <property name="geometry">
+                 <rect>
+                  <x>600</x>
+                  <y>10</y>
+                  <width>101</width>
+                  <height>31</height>
+                 </rect>
+                </property>
+                <property name="font">
+                 <font>
+                  <family>Cantarell</family>
+                 </font>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: rgb(199, 213, 207);</string>
+                </property>
+                <property name="text">
+                 <string>Update</string>
+                </property>
+                <property name="icon">
+                 <iconset theme="update">
+                  <normaloff>../../../../.designer</normaloff>../../../../.designer</iconset>
+                </property>
+                <property name="flat">
+                 <bool>false</bool>
+                </property>
+               </widget>
               </widget>
              </widget>
              <widget class="QWidget" name="tab_3">
@@ -1608,7 +1664,7 @@
                  <x>10</x>
                  <y>10</y>
                  <width>711</width>
-                 <height>471</height>
+                 <height>511</height>
                 </rect>
                </property>
                <property name="frameShape">
@@ -2029,6 +2085,25 @@
                 </property>
                 <property name="text">
                  <string>SENSE 1:</string>
+                </property>
+               </widget>
+               <widget class="QPushButton" name="pushButtonAllSense">
+                <property name="geometry">
+                 <rect>
+                  <x>470</x>
+                  <y>460</y>
+                  <width>191</width>
+                  <height>31</height>
+                 </rect>
+                </property>
+                <property name="styleSheet">
+                 <string notr="true">background-color: rgb(199, 213, 207);</string>
+                </property>
+                <property name="text">
+                 <string>Update All</string>
+                </property>
+                <property name="flat">
+                 <bool>false</bool>
                 </property>
                </widget>
               </widget>
@@ -13092,7 +13167,7 @@
      <x>0</x>
      <y>0</y>
      <width>1497</width>
-     <height>27</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

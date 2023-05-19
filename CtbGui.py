@@ -56,6 +56,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.comboBoxADC.activated.connect(self.setADC)
         self.spinBoxHighVoltage.editingFinished.connect(self.setHighVoltage)
         self.checkBoxHighVoltage.clicked.connect(self.setHighVoltage)
+        self.pushButtonDACsUpdate.clicked.connect(self.update_field)
+        self.pushButtonPsUpdate.clicked.connect(self.update_field)
 
         # For Power Supplies tab
         # TODO Only add the components of Power supplies tab
@@ -81,6 +83,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.pushButtonSense6.clicked.connect(partial(self.updateSense, 6))
         self.pushButtonSense7.clicked.connect(partial(self.updateSense, 7))
         self.pushButtonTemp.clicked.connect(self.updateTemperature)
+        self.pushButtonAllSense.clicked.connect(self.updateAllSense)
 
         # For Signals Tab
         # TODO Only add the components of Signals tab
@@ -358,6 +361,11 @@ class MainWindow(QtWidgets.QMainWindow):
         sense0 = self.det.getTemperature(dacIndex.SLOW_ADC_TEMP)
         self.labelTemp_2.setText(f'{str(sense0[0])} °C')
 
+    def updateAllSense(self):
+        self.updateTemperature()
+        for i in range(8):
+            self.updateSense(i)
+        
     # For Signals Tab functions
     # TODO Only add the components of Signals tab functions
     def dbit(self, i):
