@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install "pyctbgui[dev]"
+          pip install ".[dev]"
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Build C extension
         run: |
