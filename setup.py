@@ -27,14 +27,14 @@ setuptools.setup(
         'numpy',
         'pyzmq',
         'pillow',
-        'PyQt5',
+        'PyQt5==5.15.9',
         'pyqtgraph',
         'matplotlib',
         #'slsdet', not yet available on pypi, maybe v8
     ],
     extras_require={'dev': [
-        'pytest',
-        'ruff',
-        'yapf',
-        'pytest-ruff'
+        'pytest==7.4.0',
+        'ruff==0.0.285',
+        'yapf==0.40.1',
+        'pytest-ruff==0.1.1'
     ]})
