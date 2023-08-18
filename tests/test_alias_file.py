@@ -4,8 +4,9 @@ from pyctbgui import alias_utility as at
 
 
 def test_read_non_existing_file_throws():
-    print('running alias test')
-    at.read_alias_file('saijvcaiewjrvijaerijvaeoirvjveiojroiajgv')
+    # AttributeError added to work in gh actions environments
+    with pytest.raises(FileNotFoundError or AttributeError):
+        at.read_alias_file('saijvcaiewjrvijaerijvaeoirvjveiojroiajgv')
 
 
 def test_parse_sample_file():
@@ -90,7 +91,3 @@ def test_single_value_parse_gives_exception():
     # Check that we get the correct exception
     with pytest.raises(Exception, match=r'Alias file parsing failed'):
         at.parse_alias_lines(['hej'])
-
-
-if __name__ == '__main__':
-    test_read_non_existing_file_throws()
