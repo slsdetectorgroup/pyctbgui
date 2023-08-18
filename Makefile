@@ -11,6 +11,7 @@ clean: ## Remove the build folder and the shared library
 	rm -rf build/ pyctbgui/_decoder.cpython*
 
 test: ## Run unit tests using pytest
+	python tests/test_alias_file.py
 	python -m pytest
 
 help: # from compiler explorer
