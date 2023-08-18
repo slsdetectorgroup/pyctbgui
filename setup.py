@@ -27,7 +27,7 @@ setuptools.setup(
         'numpy',
         'pyzmq',
         'pillow',
-        'PyQt5==5.15.9',
+        'PyQt5',
         'pyqtgraph',
         'matplotlib',
         #'slsdet', not yet available on pypi, maybe v8
