@@ -8,6 +8,7 @@ from PyQt5 import QtWidgets, uic
 from slsdet import readoutMode, runStatus
 from pyctbgui.utils import decoder
 from pyctbgui.utils.defines import Defines
+import os
 
 
 class AcquisitionTab(QtWidgets.QWidget):
