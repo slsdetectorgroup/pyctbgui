@@ -27,3 +27,4 @@ jobs:
       - name: Run tests using pytest
         run: |
           make test
+      - uses: chartboost/ruff-action@v1
