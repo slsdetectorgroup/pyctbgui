@@ -4,8 +4,7 @@ from pyctbgui import alias_utility as at
 
 
 def test_read_non_existing_file_throws():
-    # AttributeError added to work in gh actions environments
-    with pytest.raises(FileNotFoundError or AttributeError):
+    with pytest.raises(FileNotFoundError):
         at.read_alias_file('saijvcaiewjrvijaerijvaeoirvjveiojroiajgv')
 
 
