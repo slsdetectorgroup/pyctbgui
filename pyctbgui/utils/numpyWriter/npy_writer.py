@@ -107,10 +107,10 @@ class NumpyFileManager:
             self.file.write(bytes(self.buffer))
             self.buffer = bytearray()
             self.updateHeader()
-            if strict:
-                self.file.flush()
-                os.fsync(self.file)
             self.bufferCount = 0
+        if strict:
+            self.file.flush()
+            os.fsync(self.file)
 
     def readFrames(self, frameStart: int, frameCount: int) -> np.ndarray:
         self.file.seek(self.headerLength + frameStart * self.__frameSize)
