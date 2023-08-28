@@ -40,7 +40,7 @@ class NumpyFileManager:
         self.isFortranOrder = isFortranOrder
         self.frameShape = frameShape
         self.frameCount = 0
-        fileExist = Path.is_file(file)
+        fileExist = Path.is_file(Path(file))
         newFile = resetFile or not fileExist
         self.buffer = bytearray()
         self.bufferCount = 0
