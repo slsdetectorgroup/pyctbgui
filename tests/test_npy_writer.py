@@ -2,6 +2,8 @@ import filecmp
 import os
 from pathlib import Path
 
+import pytest
+
 from pyctbgui.utils.numpyWriter.npy_writer import NumpyFileManager
 import numpy as np
 
@@ -73,8 +75,45 @@ def test_buffer():
 
 
 def test_init_parameters():
+    __clean_tmp_dir()
+    with pytest.raises(TypeError):
+        NumpyFileManager()
+    with pytest.raises(AssertionError):
+        NumpyFileManager(prefix / 'abaababababa.npyx')
+    with pytest.raises(AssertionError):
+        NumpyFileManager(prefix / 'abaababababa.npyx2', frameShape=(12, 34))
+    with pytest.raises(AssertionError):
+        NumpyFileManager(prefix / 'abaababababa.npyx3', dtype=np.int64)
+
+    # this should work
+    NumpyFileManager(prefix / 'abaababababa.npyx3', dtype=np.int64, frameShape=(6, 6))
+    assert Path.is_file(prefix / 'abaababababa.npyx3')
+    NumpyFileManager(prefix / 'abaababababa.npyx3', dtype=np.int64, frameShape=(6, 6))
+    NumpyFileManager(prefix / 'abaababababa.npyx3')
+
+    with pytest.raises(AssertionError):
+        NumpyFileManager(prefix / 'abaababababa.npyx3', frameShape=(6, 2))
+    with pytest.raises(AssertionError):
+        NumpyFileManager(prefix / 'abaababababa.npyx3', dtype=np.int32)
+    with pytest.raises(AssertionError):
+        NumpyFileManager(prefix / 'abaababababa.npyx3', dtype=np.float32, frameShape=(5, 5))
+
+    # this should work
+    npw = NumpyFileManager(prefix / 'tmp4.npy', dtype=np.float32, frameShape=(5, 5))
+    npw.addFrame(np.ones((5, 5), dtype=np.float32))
+    npw.close()
+    assert np.load(prefix / 'tmp4.npy').shape == (1, 5, 5)
+    npw = NumpyFileManager(prefix / 'tmp4.npy', dtype=np.int64, frameShape=(7, 7), resetFile=True)
+    npw.flushBuffer(strict=True)
+    assert np.load(prefix / 'tmp4.npy').shape == (0, 7, 7)
+
+    with pytest.raises(AssertionError):
+        npw.addFrame(np.ones((9, 4, 4)))
+
+
+def test_npz():
     pass
 
 
-def test_reset_file():
+def test_read():
     pass
