@@ -421,7 +421,7 @@ class AcquisitionTab(QtWidgets.QWidget):
         response = QtWidgets.QFileDialog.getExistingDirectory(
             parent=self.mainWindow,
             caption="Select Path to Save Output File",
-            directory=Path.cwd(),
+            directory=str(Path.cwd()),
             options=(QtWidgets.QFileDialog.ShowDirsOnly
                      | QtWidgets.QFileDialog.DontResolveSymlinks),
             # filter='README (*.md *.ui)'
