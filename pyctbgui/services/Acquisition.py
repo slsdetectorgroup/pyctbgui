@@ -10,6 +10,7 @@ import logging
 from slsdet import readoutMode, runStatus
 from pyctbgui.utils.defines import Defines
 from pyctbgui.utils.numpyWriter.npy_writer import NumpyFileManager
+from pyctbgui.utils.numpyWriter.npz_writer import NpzFileWriter
 
 if typing.TYPE_CHECKING:
     # only used for type hinting. To avoid circular dependencies these
@@ -20,6 +21,7 @@ if typing.TYPE_CHECKING:
 class AcquisitionTab(QtWidgets.QWidget):
 
     def __init__(self, parent):
+        self.__isWaveform = None
         self.x = 0
         super().__init__(parent)
         self.currentMeasurement = None
@@ -39,7 +41,6 @@ class AcquisitionTab(QtWidgets.QWidget):
         self.outputDir: Path = Path('/')
         self.outputFileNamePrefix: str = ''
         self.numpyFileManagers: dict[str, NumpyFileManager] = {}
-        self.measurementDone = False
 
         self.logger = logging.getLogger('AcquisitionTab')
 
@@ -386,36 +387,49 @@ class AcquisitionTab(QtWidgets.QWidget):
         """
         if not self.writeNumpy:
             return
+        self.__isWaveform = isWaveform
         if self.outputDir == Path('/'):
             self.outputDir = Path('./')
         if self.outputFileNamePrefix == '':
             self.outputFileNamePrefix = 'run'
-        acqIndex = self.view.spinBoxAcquisitionIndex.value() - 1
+        acqIndex = self.view.spinBoxAcquisitionIndex.value()
         if isWaveform:
-
             for device in data:
                 if device not in self.numpyFileManagers:
-                    tmpPath = self.outputDir / f'{self.outputFileNamePrefix}_{device}_f{frameIndex}_{acqIndex}.npy'
+                    tmpPath = self.outputDir / f'{self.outputFileNamePrefix}_{device}_{acqIndex}.npy'
                     self.numpyFileManagers[device] = NumpyFileManager(tmpPath, data[device].shape, data[device].dtype)
 
                 self.numpyFileManagers[device].addFrame(data[device])
-            tmpPath = self.outputDir / f'{self.outputFileNamePrefix}_XX_f{frameIndex}_{acqIndex}.npy'
-            self.logger.info(f'Saving numpy data in {tmpPath} Finished')
         else:
             if 'image' not in self.numpyFileManagers:
-                tmpPath = self.outputDir / f'{self.outputFileNamePrefix}_f{frameIndex}_{acqIndex}.npy'
+                tmpPath = self.outputDir / f'{self.outputFileNamePrefix}_{acqIndex}.npy'
                 self.numpyFileManagers['image'] = NumpyFileManager(tmpPath, data.shape, data.dtype)
             self.numpyFileManagers['image'].addFrame(data)
-            self.logger.info(f'Saving numpy data in {self.numpyFileManagers["image"].file.name} Finished')
-        if self.measurementDone:
-            self.closeOpenedNumpyFiles()
+        self.closeOpenedNumpyFiles()
 
     def closeOpenedNumpyFiles(self):
         """
-        close opened numpy files to persist their data
+        create npz file for waveform plots and close opened numpy files to persist their data
         """
+        if not self.writeNumpy:
+            return
+        status = self.det.getDetectorStatus()[0]
+        if status != runStatus.IDLE:
+            return
+        if len(self.numpyFileManagers) == 0:
+            return
+
+        filepaths = [npw.file.name for device, npw in self.numpyFileManagers.items()]
+        filenames = list(self.numpyFileManagers.keys())
+        acqIndex = self.view.spinBoxAcquisitionIndex.value()
+        ext = 'npz' if self.__isWaveform else 'npy'
+        tmpPath = self.outputDir / f'{self.outputFileNamePrefix}_{acqIndex}.{ext}'
+        self.logger.info(f'Saving numpy data in {tmpPath} Finished')
         self.logger.info(f'closing numpy {len(self.numpyFileManagers)} files')
         self.numpyFileManagers.clear()
+
+        if self.__isWaveform:
+            NpzFileWriter.zipNpyFiles(tmpPath, filepaths, filenames, deleteOriginals=True, compressed=False)
 
     def browseFilePath(self):
         response = QtWidgets.QFileDialog.getExistingDirectory(
@@ -596,7 +610,8 @@ class AcquisitionTab(QtWidgets.QWidget):
         self.updateAcquiredFrames(caught)
         status = self.det.getDetectorStatus()[0]
         self.updateDetectorStatus(status)
-        self.measurementDone = False
+        measurementDone = False
+
         # print(f'status:{status}')
         match status:
             case runStatus.RUNNING:
@@ -606,17 +621,18 @@ class AcquisitionTab(QtWidgets.QWidget):
             case runStatus.TRANSMITTING:
                 pass
             case _:
-                self.measurementDone = True
+                measurementDone = True
+                # self.closeOpenedNumpyFiles()
 
         # check for 500ms for no packets
         # needs more time for 1g streaming out done
-        if self.measurementDone:
+        if measurementDone:
             time.sleep(Defines.Time_Wait_For_Packets_ms)
             if self.det.rx_framescaught[0] != caught:
-                self.measurementDone = False
+                measurementDone = False
 
         numMeasurments = self.view.spinBoxMeasurements.value()
-        if self.measurementDone:
+        if measurementDone:
             if self.det.rx_status == runStatus.RUNNING:
                 self.det.rx_stop()
             if self.view.checkBoxFileWriteRaw.isChecked() or self.view.checkBoxFileWriteNumpy.isChecked():

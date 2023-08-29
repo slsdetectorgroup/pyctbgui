@@ -50,12 +50,19 @@ class NpzFileWriter:
                 shutil.copyfileobj(cbuf, outfile)
 
     @staticmethod
-    def zipNpyFiles(filename: str, files: list[str | pathlib.Path], fileKeys: list[str], compressed=False):
+    def zipNpyFiles(filename: str,
+                    files: list[str | pathlib.Path],
+                    fileKeys: list[str],
+                    deleteOriginals=False,
+                    compressed=False):
         compression = zipfile.ZIP_DEFLATED if compressed else zipfile.ZIP_STORED
 
         with zipfile.ZipFile(filename, mode='w', compression=compression) as zipf:
             for idx, file in enumerate(files):
                 zipf.write(file, arcname=fileKeys[idx])
+        if deleteOriginals:
+            for file in files:
+                pathlib.Path.unlink(file)
 
     def close(self):
         if self.file is not None:

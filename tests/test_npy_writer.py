@@ -169,7 +169,7 @@ def test_zipping_npy_files(compressed):
     filePaths = [prefix / (file + '.npy') for file in data.keys()]
     for file in data:
         np.save(prefix / (file + '.npy'), data[file])
-    NpzFileWriter.zipNpyFiles(prefix / 'file.npz', filePaths, list(data.keys()), compressed)
+    NpzFileWriter.zipNpyFiles(prefix / 'file.npz', filePaths, list(data.keys()), compressed=compressed)
     npz = np.load(prefix / 'file.npz')
     assert npz.files == list(data.keys())
     for file in data:
@@ -187,3 +187,35 @@ def test_zipping_npy_files(compressed):
 
     # different files :(
     # assert filecmp.cmp(prefix / 'numpy.npz', prefix / 'file.npz')
+
+
+def test_compression():
+    pass
+
+
+@pytest.mark.parametrize('compressed', [True, False])
+@pytest.mark.parametrize('isPath', [True, False])
+@pytest.mark.parametrize('deleteOriginals', [True, False])
+def test_delete_files(compressed, isPath, deleteOriginals):
+    __clean_tmp_dir()
+    data = {
+        'arr1': np.ones((10, 5, 5)),
+        'arr2': np.zeros((10, 5, 5), dtype=np.int32),
+        'arr3': np.ones((10, 5, 5), dtype=np.float32)
+    }
+    filePaths = [prefix / (file + '.npy') for file in data.keys()]
+    for file in data:
+        np.save(prefix / (file + '.npy'), data[file])
+    path = prefix / 'file.npz'
+    path = str(path) if isPath else path
+    NpzFileWriter.zipNpyFiles(path,
+                              filePaths,
+                              list(data.keys()),
+                              deleteOriginals=deleteOriginals,
+                              compressed=compressed)
+    if deleteOriginals:
+        for file in filePaths:
+            assert not Path.exists(file)
+    else:
+        for file in filePaths:
+            assert Path.exists(file)
