@@ -15,6 +15,7 @@ Allocate enough space to allow for the data to grow
 import ast
 import logging
 import os
+import zipfile
 from pathlib import Path
 
 import numpy as np
@@ -31,7 +32,7 @@ class NumpyFileManager:
 
     def __init__(
         self,
-        file: str | Path,
+        file: str | Path | zipfile.ZipExtFile,
         frameShape: tuple = None,
         dtype=None,
         resetFile: bool = False,
@@ -51,7 +52,11 @@ class NumpyFileManager:
         self.dtype = np.dtype(dtype)  # in case we pass a type like np.float32
         self.frameShape = frameShape
         self.frameCount = 0
-        fileExist = Path.is_file(Path(file))
+        if not isinstance(file, zipfile.ZipExtFile):
+            fileExist = Path.is_file(Path(file))
+        else:
+            fileExist = True
+
         newFile = resetFile or not fileExist
         self.buffer = bytearray()
         self.bufferCount = 0
@@ -66,7 +71,11 @@ class NumpyFileManager:
         else:
             # opens file for read/write and check if the header of the file corresponds to the given function
             # arguments
-            self.file = open(file, 'rb+')
+            if not isinstance(file, zipfile.ZipExtFile):
+                self.file = open(file, 'rb+')
+            else:
+                self.file = file
+
             self.file.seek(10)
             headerStr = self.file.read(np.uint16(self.headerLength - 10)).decode("UTF-8")
             header_dict = ast.literal_eval(headerStr)

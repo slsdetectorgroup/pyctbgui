@@ -1,9 +1,10 @@
-import pathlib
+from pathlib import Path
 import shutil
 import zipfile
 import io
 
 import numpy as np
+from pyctbgui.utils.numpyWriter.npy_writer import NumpyFileManager
 
 
 class NpzFileWriter:
@@ -19,7 +20,6 @@ class NpzFileWriter:
         :param mode: must be one of {'x', 'w', 'a'}. See
                https://docs.python.org/3/library/zipfile.html for detail
         """
-        assert mode in 'xwa', str(mode)
         self.compression = zipfile.ZIP_DEFLATED if compress_file else zipfile.ZIP_STORED
         self.tofile = tofile
         self.mode = mode
@@ -42,16 +42,25 @@ class NpzFileWriter:
         :param key: the name of data to write
         :param data: the data
         """
-        key += '.npy'
         with io.BytesIO() as cbuf:
             np.save(cbuf, data)
             cbuf.seek(0)
             with self.file.open(key, mode=self.mode, force_zip64=True) as outfile:
                 shutil.copyfileobj(cbuf, outfile)
 
+    def readFrames(
+        self,
+        file: str,
+        frameStart: int,
+        frameCount: int,
+    ):
+        with self.file.open(file, mode='r') as outfile:
+            npw = NumpyFileManager(outfile)
+            return npw.readFrames(frameStart, frameCount)
+
     @staticmethod
     def zipNpyFiles(filename: str,
-                    files: list[str | pathlib.Path],
+                    files: list[str | Path],
                     fileKeys: list[str],
                     deleteOriginals=False,
                     compressed=False):
@@ -62,10 +71,10 @@ class NpzFileWriter:
                 zipf.write(file, arcname=fileKeys[idx])
         if deleteOriginals:
             for file in files:
-                pathlib.Path.unlink(file)
+                Path.unlink(file)
 
     def close(self):
-        if self.file is not None:
+        if hasattr(self, 'file'):
             self.file.close()
 
     def __del__(self):
