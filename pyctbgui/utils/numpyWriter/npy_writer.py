@@ -90,7 +90,7 @@ class NumpyFileManager:
     def updateHeader(self):
         """
         updates the header of the .npy file with the class attributes
-        Note: fortran_order is always set to False
+        @note: fortran_order is always set to False
         """
         self.file.seek(0)
         header_dict = {
@@ -169,7 +169,6 @@ class NumpyFileManager:
     def __del__(self):
         """
         in case the user forgot to close the file
-        @return:
         """
         if hasattr(self, 'file') and not self.file.closed:
             self.close()

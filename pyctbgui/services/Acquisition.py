@@ -9,6 +9,7 @@ import logging
 
 from slsdet import readoutMode, runStatus
 from pyctbgui.utils.defines import Defines
+from pyctbgui.utils.numpyWriter.npy_writer import NumpyFileManager
 
 if typing.TYPE_CHECKING:
     # only used for type hinting. To avoid circular dependencies these
@@ -37,6 +38,8 @@ class AcquisitionTab(QtWidgets.QWidget):
         self.writeNumpy: bool = False
         self.outputDir: Path = Path('/')
         self.outputFileNamePrefix: str = ''
+        self.numpyFileManagers: dict[str, NumpyFileManager] = {}
+        self.measurementDone = False
 
         self.logger = logging.getLogger('AcquisitionTab')
 
@@ -377,34 +380,52 @@ class AcquisitionTab(QtWidgets.QWidget):
     def saveNumpyFile(self, data: np.ndarray | dict[str, np.ndarray], frameIndex: int, isWaveform: bool):
         """
         save the acquisition data (waveform or image) in the specified path
-        save waveform as npz file format
+        save waveform in multiple .npy files
         save image as npy file format
+        @note: frame number can be up to 100,000 so the data arrays cannot be fully loaded to memory
         """
-
         if not self.writeNumpy:
             return
         if self.outputDir == Path('/'):
             self.outputDir = Path('./')
         if self.outputFileNamePrefix == '':
             self.outputFileNamePrefix = 'run'
-
         acqIndex = self.view.spinBoxAcquisitionIndex.value() - 1
         if isWaveform:
-            path = self.outputDir / f'{self.outputFileNamePrefix}_f{frameIndex}_{acqIndex}.npz'
-            np.savez(str(path), **data)
+
+            for device in data:
+                if device not in self.numpyFileManagers:
+                    tmpPath = self.outputDir / f'{self.outputFileNamePrefix}_{device}_f{frameIndex}_{acqIndex}.npy'
+                    self.numpyFileManagers[device] = NumpyFileManager(tmpPath, data[device].shape, data[device].dtype)
+
+                self.numpyFileManagers[device].addFrame(data[device])
+            tmpPath = self.outputDir / f'{self.outputFileNamePrefix}_XX_f{frameIndex}_{acqIndex}.npy'
+            self.logger.info(f'Saving numpy data in {tmpPath} Finished')
         else:
-            path = self.outputDir / f'{self.outputFileNamePrefix}_f{frameIndex}_{acqIndex}.npy'
-            np.save(str(path), data)
-        self.logger.info(f'Saving numpy data in {path} Finished')
+            if 'image' not in self.numpyFileManagers:
+                tmpPath = self.outputDir / f'{self.outputFileNamePrefix}_f{frameIndex}_{acqIndex}.npy'
+                self.numpyFileManagers['image'] = NumpyFileManager(tmpPath, data.shape, data.dtype)
+            self.numpyFileManagers['image'].addFrame(data)
+            self.logger.info(f'Saving numpy data in {self.numpyFileManagers["image"].file.name} Finished')
+        if self.measurementDone:
+            self.closeOpenedNumpyFiles()
+
+    def closeOpenedNumpyFiles(self):
+        """
+        close opened numpy files to persist their data
+        """
+        self.logger.info(f'closing numpy {len(self.numpyFileManagers)} files')
+        self.numpyFileManagers.clear()
 
     def browseFilePath(self):
-        response = QtWidgets.QFileDialog.getExistingDirectory(parent=self.mainWindow,
-                                                              caption="Select Path to Save Output File",
-                                                              directory=Path.cwd(),
-                                                              options=(QtWidgets.QFileDialog.ShowDirsOnly
-                                                                       | QtWidgets.QFileDialog.DontResolveSymlinks)
-                                                              # filter='README (*.md *.ui)'
-                                                              )
+        response = QtWidgets.QFileDialog.getExistingDirectory(
+            parent=self.mainWindow,
+            caption="Select Path to Save Output File",
+            directory=Path.cwd(),
+            options=(QtWidgets.QFileDialog.ShowDirsOnly
+                     | QtWidgets.QFileDialog.DontResolveSymlinks),
+            # filter='README (*.md *.ui)'
+        )
         if response:
             self.view.lineEditFilePath.setText(response)
             self.setFilePath()
@@ -575,7 +596,7 @@ class AcquisitionTab(QtWidgets.QWidget):
         self.updateAcquiredFrames(caught)
         status = self.det.getDetectorStatus()[0]
         self.updateDetectorStatus(status)
-        measurementDone = False
+        self.measurementDone = False
         # print(f'status:{status}')
         match status:
             case runStatus.RUNNING:
@@ -585,17 +606,17 @@ class AcquisitionTab(QtWidgets.QWidget):
             case runStatus.TRANSMITTING:
                 pass
             case _:
-                measurementDone = True
+                self.measurementDone = True
 
         # check for 500ms for no packets
         # needs more time for 1g streaming out done
-        if measurementDone:
+        if self.measurementDone:
             time.sleep(Defines.Time_Wait_For_Packets_ms)
             if self.det.rx_framescaught[0] != caught:
-                measurementDone = False
+                self.measurementDone = False
 
         numMeasurments = self.view.spinBoxMeasurements.value()
-        if measurementDone:
+        if self.measurementDone:
             if self.det.rx_status == runStatus.RUNNING:
                 self.det.rx_stop()
             if self.view.checkBoxFileWriteRaw.isChecked() or self.view.checkBoxFileWriteNumpy.isChecked():
