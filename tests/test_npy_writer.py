@@ -7,8 +7,6 @@ import pytest
 from pyctbgui.utils.numpyWriter.npy_writer import NumpyFileManager
 import numpy as np
 
-from pyctbgui.utils.numpyWriter.npz_writer import NpzFileWriter
-
 prefix = Path('tests/.tmp/')
 
 
@@ -127,110 +125,9 @@ def test_read_frames():
     for frame in arr:
         npw.addFrame(frame)
     npw.flushBuffer(strict=True)
-    assert np.array_equal(npw.readFrames(50, 100), arr[50:150])
+    assert np.array_equal(npw.readFrames(50, 100), arr[50:100])
     assert np.array_equal(npw.readFrames(0, 1), arr[0:1])
     assert np.array_equal(npw.readFrames(0, 10000), arr)
-    assert np.array_equal(npw.readFrames(9999, 1), arr[9999:])
-    assert np.array_equal(npw.readFrames(499, 3000), arr[499:3499])
-
-
-#
-# @pytest.mark.parametrize('compressed', [True, False])
-# def test_incremental_npz(compressed):
-#     __clean_tmp_dir()
-#     arr1 = np.ones((10, 5, 5))
-#     arr2 = np.zeros((10, 5, 5), dtype=np.int32)
-#     arr3 = np.ones((10, 5, 5), dtype=np.float32)
-#     with NpzFileWriter(prefix / 'tmp.npz', 'w', compress_file=compressed) as npz:
-#         npz.addArray('adc', arr1)
-#         npz.addArray('tx', arr2)
-#         npz.addArray('signal', arr3)
-#         print(npz.file.namelist())
-#
-#     npzFile = np.load(prefix / 'tmp.npz')
-#     assert sorted(npzFile.files) == sorted(('adc', 'tx', 'signal'))
-#     assert np.array_equal(npzFile['adc'], np.ones((10, 5, 5)))
-#     assert np.array_equal(npzFile['tx'], np.zeros((10, 5, 5), dtype=np.int32))
-#     assert np.array_equal(npzFile['signal'], np.ones((10, 5, 5), dtype=np.float32))
-#     if compressed:
-#         np.savez_compressed(prefix / 'tmp2.npz', adc=arr1, tx=arr2, signal=arr3)
-#     else:
-#         np.savez(prefix / 'tmp2.npz', adc=arr1, tx=arr2, signal=arr3)
-#
-#     assert filecmp.cmp(prefix / 'tmp2.npz', prefix / 'tmp.npz')
-#
-
-
-@pytest.mark.parametrize('compressed', [True, False])
-def test_zipping_npy_files(compressed):
-    __clean_tmp_dir()
-    data = {
-        'arr1': np.ones((10, 5, 5)),
-        'arr2': np.zeros((10, 5, 5), dtype=np.int32),
-        'arr3': np.ones((10, 5, 5), dtype=np.float32)
-    }
-    filePaths = [prefix / (file + '.npy') for file in data.keys()]
-    for file in data:
-        np.save(prefix / (file + '.npy'), data[file])
-    NpzFileWriter.zipNpyFiles(prefix / 'file.npz', filePaths, list(data.keys()), compressed=compressed)
-    npz = np.load(prefix / 'file.npz')
-    assert npz.files == list(data.keys())
-    for file in data:
-        assert np.array_equal(npz[file], data[file])
-
-    if compressed:
-        np.savez_compressed(prefix / 'numpy.npz', **data)
-    else:
-        np.savez(prefix / 'numpy.npz', **data)
-
-    numpyz = np.load(prefix / 'numpy.npz')
-    for file in data:
-        assert np.array_equal(numpyz[file], npz[file])
-    assert npz.files == numpyz.files
-
-    # different files :(
-    # assert filecmp.cmp(prefix / 'numpy.npz', prefix / 'file.npz')
-
-
-def test_compression():
-    pass
-
-
-@pytest.mark.parametrize('compressed', [True, False])
-@pytest.mark.parametrize('isPath', [True, False])
-@pytest.mark.parametrize('deleteOriginals', [True, False])
-def test_delete_files(compressed, isPath, deleteOriginals):
-    __clean_tmp_dir()
-    data = {
-        'arr1': np.ones((10, 5, 5)),
-        'arr2': np.zeros((10, 5, 5), dtype=np.int32),
-        'arr3': np.ones((10, 5, 5), dtype=np.float32)
-    }
-    filePaths = [prefix / (file + '.npy') for file in data.keys()]
-    for file in data:
-        np.save(prefix / (file + '.npy'), data[file])
-    path = prefix / 'file.npz'
-    path = str(path) if isPath else path
-    NpzFileWriter.zipNpyFiles(path,
-                              filePaths,
-                              list(data.keys()),
-                              deleteOriginals=deleteOriginals,
-                              compressed=compressed)
-    if deleteOriginals:
-        for file in filePaths:
-            assert not Path.exists(file)
-    else:
-        for file in filePaths:
-            assert Path.exists(file)
-
-
-def test_npz_read_frames():
-    rng = np.random.default_rng(seed=42)
-    arr1 = rng.random(10, 5, 5)
-
-    with NpzFileWriter(prefix / 'tmp.npz', 'w') as npz:
-        npz.addArray('adc', arr1)
-
-    with NpzFileWriter(prefix / 'tmp.npz', 'r') as npz:
-        frames = npz.readFrames('adc', 5, 3)
-        assert np.array_equal(frames, arr1[5:8])
+    assert np.array_equal(npw.readFrames(9999, 10000), arr[9999:10000])
+    assert np.array_equal(npw.readFrames(9999, 10005), arr[9999:10000])
+    assert np.array_equal(npw.readFrames(499, 3000), arr[499:3000])

@@ -154,22 +154,23 @@ class NumpyFileManager:
             self.file.flush()
             os.fsync(self.file)
 
-    def readFrames(self, frameStart: int, frameCount: int) -> np.ndarray:
+    def readFrames(self, frameStart: int, frameEnd: int) -> np.ndarray:
         """
         read frames from .npy file without loading the whole file to memory with np.load
         @param frameStart: number of the frame to start reading from
-        @param frameCount: number of frames to load
-        @return: np.ndarray of frames of the shape [frameCount,*self.frameShape]
+        @param frameEnd: index of the last frame (not inclusive)
+        @return: np.ndarray of frames of the shape [frameEnd-frameStart,*self.frameShape]
         """
+        frameCount = frameEnd - frameStart
+        assert frameCount >= 0, 'frameEnd must be bigger than frameStart'
         if frameCount == 0:
             return np.array([], dtype=self.dtype)
         self.file.seek(self.headerLength + frameStart * self.__frameSize)
         data = self.file.read(frameCount * self.__frameSize)
-        arr = np.frombuffer(data, self.dtype).reshape([-1, *self.frameShape])
-        if arr.shape[0] < frameCount:
-            self.logger.warning(
-                f'stored array has less frames ({arr.shape[0]}) than frameCount argument ({frameCount})')
-        return arr
+        return np.frombuffer(data, self.dtype).reshape([-1, *self.frameShape])
+        # if arr.shape[0] < frameCount:
+        #     self.logger.warning(
+        #         f'stored array has less frames ({arr.shape[0]}) than frameCount argument ({frameCount})')
 
     def close(self):
         self.flushBuffer()

@@ -14,7 +14,7 @@ class NpzFileWriter:
     to ensure closed after usage.
     """
 
-    def __init__(self, tofile: str, mode: str = 'x', compress_file=False):
+    def __init__(self, tofile: str, mode='w', compress_file=False):
         """
         :param tofile: the ``npz`` file to write
         :param mode: must be one of {'x', 'w', 'a'}. See
@@ -23,40 +23,38 @@ class NpzFileWriter:
         self.compression = zipfile.ZIP_DEFLATED if compress_file else zipfile.ZIP_STORED
         self.tofile = tofile
         self.mode = mode
-        self.file = None
-
-    def openFile(self):
         self.file = zipfile.ZipFile(self.tofile, mode=self.mode, compression=self.compression)
 
     def __enter__(self):
-        self.openFile()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
-    def addArray(self, key: str, data: np.ndarray | bytes) -> None:
+    def writeArray(self, key: str, data: np.ndarray | bytes) -> None:
         """
         overwrite existing data of name ``key``.
 
         :param key: the name of data to write
         :param data: the data
         """
+        key += '.npy'
         with io.BytesIO() as cbuf:
             np.save(cbuf, data)
             cbuf.seek(0)
-            with self.file.open(key, mode=self.mode, force_zip64=True) as outfile:
+            with self.file.open(key, mode='w', force_zip64=True) as outfile:
                 shutil.copyfileobj(cbuf, outfile)
 
     def readFrames(
         self,
         file: str,
         frameStart: int,
-        frameCount: int,
+        frameEnd: int,
     ):
+        file += '.npy'
         with self.file.open(file, mode='r') as outfile:
             npw = NumpyFileManager(outfile)
-            return npw.readFrames(frameStart, frameCount)
+            return npw.readFrames(frameStart, frameEnd)
 
     @staticmethod
     def zipNpyFiles(filename: str,
@@ -66,15 +64,15 @@ class NpzFileWriter:
                     compressed=False):
         compression = zipfile.ZIP_DEFLATED if compressed else zipfile.ZIP_STORED
 
-        with zipfile.ZipFile(filename, mode='w', compression=compression) as zipf:
+        with zipfile.ZipFile(filename, mode='w', compression=compression, allowZip64=True) as zipf:
             for idx, file in enumerate(files):
-                zipf.write(file, arcname=fileKeys[idx])
+                zipf.write(file, arcname=fileKeys[idx] + '.npy')
         if deleteOriginals:
             for file in files:
                 Path.unlink(file)
 
     def close(self):
-        if hasattr(self, 'file'):
+        if hasattr(self, 'file') and self.file is not None:
             self.file.close()
 
     def __del__(self):
