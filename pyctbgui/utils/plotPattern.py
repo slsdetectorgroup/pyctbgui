@@ -85,7 +85,7 @@ class PlotPattern:
         # Load the pattern and get all lines
         # Loop all lines
         #with open(Folder + "/" + File_pat + ".pat") as f_pat:
-        with Path.open(self.pattern) as f_pat:
+        with Path.open(Path(self.pattern)) as f_pat:
             lines_pat = f_pat.readlines()
         f_pat.close()
 
